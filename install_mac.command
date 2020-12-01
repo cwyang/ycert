@@ -1,6 +1,6 @@
 #!/bin/sh
 install_cert() {
-    cmd="security add-trusted-cert -d -k /Library/Keychains/System.keychain -r trustRoot $certLocation$cert"
+    cmd="security add-trusted-cert -d -k /Library/Keychains/System.keychain -r trustRoot $certLocation$CERTFILE"
     prompt='Installing an SSL certificate'
     OUTPUT=$(osascript -e "do shell script \"${cmd}\" with administrator privileges with prompt \"${prompt}\"" 2>&1)
     if [ $? -ne 0 ]; then
