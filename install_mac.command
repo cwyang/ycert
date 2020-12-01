@@ -2,7 +2,7 @@
 function install_cert() {
 	for cert in "${rootCerts[@]}"
 	do
-	    cmd="isecurity add-trusted-cert -d -k /Library/Keychains/System.keychain -r trustRoot $certLocation$cert"
+	    cmd="security add-trusted-cert -d -k /Library/Keychains/System.keychain -r trustRoot $certLocation$cert"
 	    prompt='Installing an SSL certificate'
 	    OUTPUT=$(osascript -e "do shell script \"${cmd}\" with administrator privileges with prompt \"${prompt}\"" 2>&1)
 	    if [ $? -ne 0 ]; then
