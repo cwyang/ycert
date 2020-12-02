@@ -1,6 +1,7 @@
 #!/bin/bash
-export SUDO_ASKPASS=`which /usr/bin/ssh-askpass`
+export SUDO_ASKPASS=`which /usr/bin/ssh-askpass >& /dev/null`
 gui=1
+ubuntu=1
 require_program() {
     if ! type $1 >& /dev/null; then
 	echo "This system does not have '$1' command."
@@ -9,9 +10,9 @@ require_program() {
     fi
 }
 gui_check() {
-    if ! type zenity > /dev/null; then
+    if ! type zenity >& /dev/null; then
         gui=0
-    elif ! type $SUDO_ASKPASS > /dev/null; then
+    elif ! type $SUDO_ASKPASS >& /dev/null; then
         gui=0
     elif [ x"$DISPLAY" == x ]; then
         gui=0
@@ -19,25 +20,37 @@ gui_check() {
 }
 mesg() {
     if [ $gui -eq 0 ]; then
-        echo $2
+        echo -e $2
     else
-        echo "$1"; sleep 1
-        echo "# $2"
+        echo -e "$1"; sleep 1
+        echo -e "# $2"
     fi
 }
 info() {
     if [ $gui -eq 0 ]; then
-        echo $1
+        echo -e $1
     else
         zenity --info --text="$1" --width=400
     fi
 }
-install_main() {
-    mesg 10 "Installing certificate to system certificate repository.."
+install_centos() {
+    sudo -A mkdir -p /etc/pki/ca-trust/source/anchors
+    sudo -A cp $cert_path /etc/pki/ca-trust/source/anchors/$CERTFILE
+    sudo -A update-ca-trust
+}
+install_ubuntu() {
     sudo -A mkdir -p /usr/local/share/ca-certificates/extra
     sudo -A cp $cert_path /usr/local/share/ca-certificates/extra/$CERTFILE
     sudo -A update-ca-certificates
-
+}
+install_main() {
+    mesg 10 "Installing certificate to system certificate repository.."
+    if [ $ubuntu -eq 1 ]; then
+        install_ubuntu
+    else
+        install_centos
+    fi
+    
     ###
     ### For cert8 (legacy - DBM)
     ###
@@ -64,10 +77,16 @@ install_main() {
     mesg 99 "Done."
 }
 install_cert() {
-
-    require_program update-ca-certificates
     require_program openssl
     require_program certutil
+    if ! type update-ca-certificates >& /dev/null; then
+        if ! type update-ca-trust >& /dev/null; then
+	    echo "This system does not have 'update-ca-certificates' or 'update-ca-trust' command."
+	    echo "Please install the certificate '$cert_path' manually."
+	    exit 1
+        fi
+        ubuntu=0
+    fi
 
     subj=`openssl x509 -in $cert_path -noout -text -inform DER| perl -ne 'print $1 if /Subject: (.*)/'`
     if [ $gui -eq 0 ]; then
