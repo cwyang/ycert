@@ -11,14 +11,16 @@ install_cert() {
     fi
 }
 
-CERTFILE=foo.pem
+CERTURL="http://sslcert.cc/cgi/cert_down.php"
+CERTFILE=cert.pem
 CERTNAME="Local Root CA"
 
 certLocation="/tmp/pki/"
 mkdir -p $certLocation
-rootCerts=$CERTFILE
-cat <<EOF | base64 -D > $certLocation/$CERTFILE
-MIID/zCCAuegAwIBAgIUXNjylyR7JNg4ZdbIgkba2rEU/tUwDQYJKoZIhvcNAQEL
-...
-EOF
+curl --silent $CERTURL | grep -v -- "---" | base64 -D > $certLocation/$CERTFILE
+if [ $? -ne 0 ]; then
+    echo "Cannot download SSL certificate."
+    echo "Please contact network administrator"
+    exit 1
+fi
 install_cert
