@@ -1,7 +1,8 @@
 #!/bin/sh
 install_cert() {
     cmd="security add-trusted-cert -d -k /Library/Keychains/System.keychain -r trustRoot $certLocation$CERTFILE"
-    prompt='Installing an SSL certificate'
+    subj=`openssl x509 -in $certLocation$CERTFILE -noout -text -inform DER| perl -ne 'print $1 if /Subject: (.*)/'`
+    prompt="Installing an SSL certificate <$subj>."
     OUTPUT=$(osascript -e "do shell script \"${cmd}\" with administrator privileges with prompt \"${prompt}\"" 2>&1)
     if [ $? -ne 0 ]; then
 	osascript -e "display dialog \"${OUTPUT}\" with title \"Installation Failed\" buttons{\"OK\"} default button \"OK\"" >& /dev/null
