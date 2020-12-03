@@ -65,7 +65,7 @@ install_main() {
     for certDB in $(find ~/ -name "cert8.db")
     do
         certdir=$(dirname ${certDB});
-        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d dbm:${certdir}
+        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d dbm:"${certdir}"
     done
 
 
@@ -77,7 +77,7 @@ install_main() {
     for certDB in $(find ~/ -name "cert9.db")
     do
         certdir=$(dirname ${certDB});
-        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:${certdir}
+        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:"${certdir}"
     done
 
     mesg 99 "Done."
