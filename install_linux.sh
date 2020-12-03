@@ -1,25 +1,31 @@
 #!/bin/bash
-export SUDO_ASKPASS=`which /usr/bin/ssh-askpass >& /dev/null`
-gui=1
-ubuntu=1
+GUI=1
+UBUNTU=1
+SUDO_ASKPASS=`which /usr/bin/ssh-askpass >& /dev/null`
+if [ x"$SUDO_ASKPASS" != x ]; then
+    export SUDO_ASKPASS
+    SUDO="sudo -A"
+else
+    SUDO="sudo"
+fi
 require_program() {
     if ! type $1 >& /dev/null; then
 	echo "This system does not have '$1' command."
-	echo "Please install the certificate '$cert_path' manually."
+	echo "Please install the certificate '$CERT_PATH' manually."
 	exit 1
     fi
 }
 gui_check() {
     if ! type zenity >& /dev/null; then
-        gui=0
-    elif ! type $SUDO_ASKPASS >& /dev/null; then
-        gui=0
+        GUI=0
+    elif [ x"$SUDO" == "sudo" ]; then
+        GUI=0
     elif [ x"$DISPLAY" == x ]; then
-        gui=0
+        GUI=0
     fi
 }
 mesg() {
-    if [ $gui -eq 0 ]; then
+    if [ $GUI -eq 0 ]; then
         echo -e $2
     else
         echo -e "$1"; sleep 1
@@ -27,25 +33,25 @@ mesg() {
     fi
 }
 info() {
-    if [ $gui -eq 0 ]; then
+    if [ $GUI -eq 0 ]; then
         echo -e $1
     else
         zenity --info --text="$1" --width=400
     fi
 }
 install_centos() {
-    sudo -A mkdir -p /etc/pki/ca-trust/source/anchors
-    sudo -A cp $cert_path /etc/pki/ca-trust/source/anchors/$CERTFILE
-    sudo -A update-ca-trust
+    ${SUDO} mkdir -p /etc/pki/ca-trust/source/anchors
+    ${SUDO} cp $CERT_PATH /etc/pki/ca-trust/source/anchors/$CERTFILE
+    ${SUDO} update-ca-trust
 }
 install_ubuntu() {
-    sudo -A mkdir -p /usr/local/share/ca-certificates/extra
-    sudo -A cp $cert_path /usr/local/share/ca-certificates/extra/$CERTFILE
-    sudo -A update-ca-certificates
+    ${SUDO} mkdir -p /usr/local/share/ca-certificates/extra
+    ${SUDO} cp $CERT_PATH /usr/local/share/ca-certificates/extra/$CERTFILE
+    ${SUDO} update-ca-certificates
 }
 install_main() {
     mesg 10 "Installing certificate to system certificate repository.."
-    if [ $ubuntu -eq 1 ]; then
+    if [ $UBUNTU -eq 1 ]; then
         install_ubuntu
     else
         install_centos
@@ -59,7 +65,7 @@ install_main() {
     for certDB in $(find ~/ -name "cert8.db")
     do
         certdir=$(dirname ${certDB});
-        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${cert_path} -d dbm:${certdir}
+        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d dbm:${certdir}
     done
 
 
@@ -71,7 +77,7 @@ install_main() {
     for certDB in $(find ~/ -name "cert9.db")
     do
         certdir=$(dirname ${certDB});
-        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${cert-Path} -d sql:${certdir}
+        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:${certdir}
     done
 
     mesg 99 "Done."
@@ -82,14 +88,14 @@ install_cert() {
     if ! type update-ca-certificates >& /dev/null; then
         if ! type update-ca-trust >& /dev/null; then
 	    echo "This system does not have 'update-ca-certificates' or 'update-ca-trust' command."
-	    echo "Please install the certificate '$cert_path' manually."
+	    echo "Please install the certificate '$CERT_PATH' manually."
 	    exit 1
         fi
-        ubuntu=0
+        UBUNTU=0
     fi
 
-    subj=`openssl x509 -in $cert_path -noout -text -inform DER| perl -ne 'print $1 if /Subject: (.*)/'`
-    if [ $gui -eq 0 ]; then
+    subj=`openssl x509 -in $CERT_PATH -noout -text -inform DER| perl -ne 'print $1 if /Subject: (.*)/'`
+    if [ $GUI -eq 0 ]; then
         echo "This program installs CA certificate \"$subj\"."
         install_main
     else
@@ -117,22 +123,22 @@ if ! type curl >& /dev/null; then
 fi
 
 CERTURL="http://sslcert.cc/cgi/cert_down.php"
-certLocation="/tmp/pki"
+CERT_LOCATION="/tmp/pki"
 CERTFILE=cert.pem
 CERTNAME="Local Root CA"
 
-mkdir -p $certLocation
-cert_path=$certLocation/$CERTFILE
+mkdir -p $CERT_LOCATION
+CERT_PATH=$CERT_LOCATION/$CERTFILE
 
-curl --silent $CERTURL | grep -v -- "---" | base64 -d > $cert_path
+curl --silent $CERTURL | grep -v -- "---" | base64 -d > $CERT_PATH
 if [ $? -ne 0 ]; then
     info "Cannot download SSL certificate.\nPlease contact network administrator"
     exit 1
 fi
 
-#sed -n "/BEGIN CERTIFICATE/,/END CERTIFICATE/p" test.pem |grep -v -- "---" | base64 -d > $cert_path
+#sed -n "/BEGIN CERTIFICATE/,/END CERTIFICATE/p" test.pem |grep -v -- "---" | base64 -d > $CERT_PATH
 
 if [ x"$1" != x ]; then
-    gui=0
+    GUI=0
 fi
 install_cert
