@@ -1,13 +1,7 @@
 #!/bin/bash
 GUI=1
 UBUNTU=1
-SUDO_ASKPASS=`which /usr/bin/ssh-askpass 2> /dev/null`
-if [ x"$SUDO_ASKPASS" != x ]; then
-    export SUDO_ASKPASS
-    SUDO="sudo -A"
-else
-    SUDO="sudo"
-fi
+ASKPASS=/usr/bin/ssh-askpass
 require_program() {
     if ! type $1 >& /dev/null; then
 	echo "This system does not have '$1' command."
@@ -18,10 +12,16 @@ require_program() {
 gui_check() {
     if ! type zenity >& /dev/null; then
         GUI=0
-    elif [ "$SUDO" == "sudo" ]; then
+    elif ! [ -x $ASKPASS ]; then
         GUI=0
     elif [ x"$DISPLAY" == x ]; then
         GUI=0
+    fi
+    if [ $GUI -eq 1 ]; then
+        export SUDO_ASKPASS=$ASKPASS
+        SUDO="sudo -A"
+    else
+        SUDO="sudo"
     fi
 }
 mesg() {
@@ -62,10 +62,10 @@ install_main() {
     ###
 
     mesg 30 "Updating local user cert8 repository.."
-    for certDB in $(find ~/ -name "cert8.db")
+    find ~/ -name "cert8.db" -print0 | while read -d $'\0' certDB
     do
-        certdir=$(dirname ${certDB});
-        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d dbm:"${certdir}"
+        certdir=$(dirname "${certDB}")
+        certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d dbm:"${certdir}"        
     done
 
 
@@ -74,9 +74,10 @@ install_main() {
     ###
 
     mesg 60 "Updating local user cert9 repository.."
-    for certDB in $(find ~/ -name "cert9.db")
+    find ~/ -name "cert9.db" -print0 | while read -d $'\0' certDB
     do
-        certdir=$(dirname ${certDB});
+        certdir=$(dirname "${certDB}")
+        echo certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:"<${certdir}>"
         certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:"${certdir}"
     done
 
