@@ -1,7 +1,7 @@
 #!/bin/bash
 GUI=1
 UBUNTU=1
-SUDO_ASKPASS=`which /usr/bin/ssh-askpass >& /dev/null`
+SUDO_ASKPASS=`which /usr/bin/ssh-askpass 2> /dev/null`
 if [ x"$SUDO_ASKPASS" != x ]; then
     export SUDO_ASKPASS
     SUDO="sudo -A"
@@ -18,7 +18,7 @@ require_program() {
 gui_check() {
     if ! type zenity >& /dev/null; then
         GUI=0
-    elif [ x"$SUDO" == "sudo" ]; then
+    elif [ "$SUDO" == "sudo" ]; then
         GUI=0
     elif [ x"$DISPLAY" == x ]; then
         GUI=0
