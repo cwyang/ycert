@@ -77,7 +77,6 @@ install_main() {
     find ~/ -name "cert9.db" -print0 | while read -d $'\0' certDB
     do
         certdir=$(dirname "${certDB}")
-        echo certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:"<${certdir}>"
         certutil -A -n "${CERTNAME}" -t "TCu,Cu,Tu" -i ${CERT_PATH} -d sql:"${certdir}"
     done
 
